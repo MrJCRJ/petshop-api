@@ -37,10 +37,13 @@ export class Endereco {
   versionKey: false,
   toJSON: {
     virtuals: true,
-    transform: (doc, ret) => {
-      ret.id = ret._id; // Garante que o id será retornado como string
+    transform: function (doc, ret) {
+      ret.id = ret._id.toString();
       delete ret._id;
       delete ret.__v;
+      // Remove propriedades indesejadas
+      delete ret.pendingSync;
+      return ret;
     },
   },
 })
@@ -59,7 +62,6 @@ export class Cliente extends Document {
 
   @Prop({
     required: true,
-    unique: true,
     validate: {
       validator: (v: string) =>
         /^(\d{3}\.?\d{3}\.?\d{3}-?\d{2}|\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2})$/.test(

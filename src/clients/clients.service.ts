@@ -24,7 +24,18 @@ export class ClientsService {
   }
 
   async findAll(): Promise<Cliente[]> {
-    return this.clienteModel.find().sort({ createdAt: -1 }).exec();
+    try {
+      const clientes = await this.clienteModel
+        .find()
+        .sort({ createdAt: -1 })
+        .lean() // Usa lean() para melhor performance
+        .exec();
+
+      return clientes;
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+      throw new Error('Failed to fetch clients');
+    }
   }
 
   async findOne(id: string): Promise<Cliente | null> {

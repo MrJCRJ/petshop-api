@@ -8,8 +8,6 @@ import {
   Delete,
   HttpCode,
   HttpStatus,
-  UseInterceptors,
-  ClassSerializerInterceptor,
   NotFoundException,
 } from '@nestjs/common';
 import { ClientsService } from '../clients.service';
@@ -20,7 +18,6 @@ import { Cliente } from '../schemas/client.schema';
 import { SyncOperation, SyncResponse } from '../../shared/sync.types';
 
 @Controller('clientes')
-@UseInterceptors(ClassSerializerInterceptor)
 export class ClientsController {
   constructor(private readonly clientsService: ClientsService) {}
 
