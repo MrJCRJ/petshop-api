@@ -9,6 +9,8 @@ import {
   HttpCode,
   HttpStatus,
   NotFoundException,
+  ConflictException, // Adicione esta linha
+  InternalServerErrorException, // Adicione esta linha
 } from '@nestjs/common';
 import { ClientsService } from '../clients.service';
 import { CreateClientDto } from '../dtos/create-client.dto';
@@ -23,7 +25,17 @@ export class ClientsController {
 
   @Post()
   async create(@Body() createClientDto: CreateClientDto): Promise<Cliente> {
-    return this.clientsService.create(createClientDto);
+    try {
+      return await this.clientsService.create(createClientDto);
+    } catch (error) {
+      // Handle duplicate key error specifically
+      if (error === 11000) {
+        throw new ConflictException('Já existe um cliente com este documento');
+      }
+      // Log the actual error for debugging
+      console.error('Erro ao criar cliente:', error);
+      throw new InternalServerErrorException('Falha ao criar cliente');
+    }
   }
 
   @Get()
