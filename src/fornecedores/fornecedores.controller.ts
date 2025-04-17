@@ -13,6 +13,7 @@ import {
 import { FornecedoresService } from './fornecedores.service';
 import { Fornecedor } from './schemas/fornecedor.schema';
 import { CreateFornecedorDto } from './dtos/create-fornecedor.dto';
+import { UpdateFornecedorDto } from './dtos/update-fornecedor.dto';
 
 @Controller('fornecedores')
 export class FornecedoresController {
@@ -38,14 +39,14 @@ export class FornecedoresController {
   @Put(':id')
   async update(
     @Param('id') id: string,
-    @Body() updateFornecedorDto: Partial<CreateFornecedorDto>,
+    @Body() updateFornecedorDto: UpdateFornecedorDto,
   ): Promise<Fornecedor> {
     return this.fornecedoresService.update(id, updateFornecedorDto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  async delete(@Param('id') id: string): Promise<{ deleted: boolean }> {
-    return this.fornecedoresService.delete(id);
+  async remove(@Param('id') id: string): Promise<{ deleted: boolean }> {
+    return this.fornecedoresService.remove(id);
   }
 }
