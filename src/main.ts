@@ -10,16 +10,33 @@ async function bootstrap() {
   try {
     console.log('Starting application...');
 
-    const app = await NestFactory.create(AppModule);
+    // Configuração explícita para o Render
+    const app = await NestFactory.create(AppModule, {
+      bufferLogs: true,
+      abortOnError: false,
+    });
 
-    // Configurações básicas
+    // Configurações de segurança e logging
     app.use(helmet());
-    app.enableCors();
-    app.use(morgan('dev'));
-    app.useGlobalPipes(new ValidationPipe());
+    app.enableCors({
+      origin: process.env.CORS_ORIGIN || '*',
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+      credentials: true,
+    });
+    app.use(morgan('combined'));
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
     app.useGlobalFilters(new HttpExceptionFilter());
 
-    // Configuração do Mongoose
+    // Configuração robusta do Mongoose
+    mongoose.set('debug', process.env.NODE_ENV !== 'production');
+    mongoose.set('strictQuery', false);
+
     const mongooseConnection = mongoose.connection;
 
     mongooseConnection.on('connecting', () => {
@@ -32,14 +49,27 @@ async function bootstrap() {
 
     mongooseConnection.on('error', (err) => {
       console.error('❌ MongoDB connection error:', err);
+      process.exit(1); // Encerra a aplicação em caso de erro de conexão
     });
 
-    // Inicia a aplicação
-    await app.init();
+    // Conexão com tratamento de timeout
+    await mongoose.connect(
+      process.env.MONGODB_URI || 'mongodb://localhost:27017/petshop',
+      {
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
+        connectTimeoutMS: 30000,
+      },
+    );
 
-    const port = process.env.PORT || 5001;
-    await app.listen(port);
+    // Inicialização do servidor
+    const port = parseInt(process.env.PORT || '5001', 10);
+    await app.listen(port, '0.0.0.0'); // Importante para o Render
+
     console.log(`🚀 Application running on port ${port}`);
+    console.log(
+      `🛡️  CORS enabled for: ${process.env.CORS_ORIGIN || 'all origins'}`,
+    );
   } catch (err) {
     console.error('🔥 Application startup error:', err);
     process.exit(1);

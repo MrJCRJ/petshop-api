@@ -2,12 +2,9 @@
   "name": "petshop-api",
   "version": "0.0.1",
   "scripts": {
-    "build": "NODE_OPTIONS=--max-old-space-size=4096 node_modules/.bin/nest build",
-    "start": "nest start",
-    "start:dev": "nest start --watch",
-    "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
-    "test": "jest"
+    "start": "NODE_OPTIONS=--max_old_space_size=4096 node dist/main",
+    "build": "NODE_OPTIONS=--max_old_space_size=4096 nest build",
+    "start:dev": "nest start --watch"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

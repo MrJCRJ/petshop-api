@@ -3,13 +3,9 @@ services:
     name: petshop-api
     runtime: node
     buildCommand: pnpm install && pnpm run build
-    startCommand: pnpm start:prod
+    startCommand: pnpm start
     envVars:
+      - key: PORT
+        value: 10000
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 8080
-      - key: MONGODB_URI
-        fromDatabase:
-          name: petshop-db
-          property: connectionString
