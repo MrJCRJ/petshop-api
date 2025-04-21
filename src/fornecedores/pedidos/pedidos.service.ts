@@ -2,57 +2,65 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Pedido } from '../schemas/pedido.schema';
+import { Fornecedor } from '../../fornecedores/schemas/fornecedor.schema';
 import { CreatePedidoDto } from '../dtos/create-pedido.dto';
 import { UpdatePedidoDto } from '../dtos/update-pedido.dto';
 
 @Injectable()
 export class PedidosService {
-  constructor(@InjectModel(Pedido.name) private pedidoModel: Model<Pedido>) {}
+  constructor(
+    @InjectModel(Pedido.name) private pedidoModel: Model<Pedido>,
+    @InjectModel(Fornecedor.name) private fornecedorModel: Model<Fornecedor>,
+  ) {}
 
   async create(createPedidoDto: CreatePedidoDto): Promise<Pedido> {
-    // Calcula o valor total automaticamente
-    createPedidoDto.valorTotal =
-      createPedidoDto.quantidade * createPedidoDto.valorUnitario;
+    await this.verificarFornecedorExistente(createPedidoDto.fornecedorCnpj);
 
-    const createdPedido = new this.pedidoModel(createPedidoDto);
+    const pedidoData = {
+      ...createPedidoDto,
+      valorTotal: createPedidoDto.quantidade * createPedidoDto.valorUnitario,
+      data: new Date(createPedidoDto.data),
+    };
+
+    const createdPedido = new this.pedidoModel(pedidoData);
     return createdPedido.save();
   }
 
-  async findAll(): Promise<Pedido[]> {
-    return this.pedidoModel.find().exec();
-  }
-
-  async findOne(id: string): Promise<Pedido> {
-    const pedido = await this.pedidoModel.findById(id).exec();
-    if (!pedido) {
-      throw new NotFoundException(`Pedido com ID ${id} não encontrado`);
+  private async verificarFornecedorExistente(cnpj: string): Promise<void> {
+    const fornecedor = await this.fornecedorModel.findOne({ cnpj }).exec();
+    if (!fornecedor) {
+      throw new NotFoundException(`Fornecedor com CNPJ ${cnpj} não encontrado`);
     }
-    return pedido;
   }
 
   async update(id: string, updatePedidoDto: UpdatePedidoDto): Promise<Pedido> {
-    // Recalcula o valor total se quantidade ou valorUnitário foram alterados
-    if (updatePedidoDto.quantidade || updatePedidoDto.valorUnitario) {
-      const pedidoExistente = await this.findOne(id);
-      updatePedidoDto.valorTotal =
-        (updatePedidoDto.quantidade || pedidoExistente.quantidade) *
-        (updatePedidoDto.valorUnitario || pedidoExistente.valorUnitario);
+    const pedidoExistente = await this.pedidoModel.findById(id).exec();
+    if (!pedidoExistente) {
+      throw new NotFoundException(`Pedido com ID ${id} não encontrado`);
     }
 
-    const pedido = await this.pedidoModel
-      .findByIdAndUpdate(id, updatePedidoDto, { new: true })
+    const quantidade = updatePedidoDto.quantidade ?? pedidoExistente.quantidade;
+    const valorUnitario =
+      updatePedidoDto.valorUnitario ?? pedidoExistente.valorUnitario;
+    const valorTotal = quantidade * valorUnitario;
+
+    const updated = await this.pedidoModel
+      .findByIdAndUpdate(
+        id,
+        {
+          ...updatePedidoDto,
+          valorTotal,
+        },
+        { new: true },
+      )
       .exec();
 
-    if (!pedido) {
-      throw new NotFoundException(`Pedido com ID ${id} não encontrado`);
+    if (!updated) {
+      throw new NotFoundException(
+        `Pedido com ID ${id} não encontrado após atualização`,
+      );
     }
-    return pedido;
-  }
 
-  async remove(id: string): Promise<void> {
-    const result = await this.pedidoModel.deleteOne({ _id: id }).exec();
-    if (result.deletedCount === 0) {
-      throw new NotFoundException(`Pedido com ID ${id} não encontrado`);
-    }
+    return updated;
   }
 }
