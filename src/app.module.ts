@@ -5,6 +5,7 @@ import { ClientsModule } from './clients/clients.module';
 import { HealthModule } from './health/health.module';
 import mongoose from 'mongoose';
 import { FornecedoresModule } from './fornecedores/fornecedores.module';
+import { PedidosModule } from './fornecedores/pedidos/pedidos.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { FornecedoresModule } from './fornecedores/fornecedores.module';
     ClientsModule,
     HealthModule,
     FornecedoresModule,
+    PedidosModule,
   ],
 })
 export class AppModule {}
